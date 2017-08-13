@@ -65,10 +65,17 @@
                                      :not (apply bit-not resolved-inputs))]
                         [(assoc values out result) rest-queue])))))
 
-(defn part1 []
+(defn solve [wiring-map]
   (let [all-steps (iterate step-evaluation [wiring-map ["a"]])
         final-step (first (filter (comp empty? second) all-steps))]
     ((first final-step) "a")))
+
+(defn part1 []
+  (solve wiring-map))
+
+(defn part2 []
+  (let [overridden-wiring (assoc wiring-map "b" (part1))]
+    (solve overridden-wiring)))
 
 
 
