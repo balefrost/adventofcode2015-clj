@@ -25,17 +25,8 @@
 
 (def all-cities (into #{} (map :from (keys input-map))))
 
-(defn permutations [s]
-  (if (empty? s)
-    [[]]
-    (mapcat
-      (fn [el]
-        (let [without-el (remove #(= el %) s)]
-          (map #(cons el %) (permutations without-el))))
-      s)))
-
 (defn all-paths [all-cities]
-  (permutations all-cities))
+  (advent-util/permutations all-cities))
 
 (defn compute-path-length [path input-map]
   (let [path-steps (partition 2 1 path)

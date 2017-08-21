@@ -49,3 +49,13 @@
 
 (defn combinations [coll n]
   (-combinations-helper coll n []))
+
+(defn permutations [s]
+  (if (empty? s)
+    [[]]
+    (mapcat
+      (fn [el]
+        (let [without-el (remove #(= el %) s)]
+          (map #(cons el %) (permutations without-el))))
+      s)))
+
