@@ -59,3 +59,11 @@
           (map #(cons el %) (permutations without-el))))
       s)))
 
+(defn partitions [n sum]
+  (assert (> n 0) "n must be positive")
+  (if (= n 1)
+    [[sum]]
+    (for [hd (range 0 (inc sum))
+          tl (partitions (dec n) (- sum hd))]
+      (cons hd tl))))
+
