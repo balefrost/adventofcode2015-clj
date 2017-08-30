@@ -7,19 +7,28 @@
 
 (def replacement-regex #"^(\w+) => (\w+)$")
 
+(def molecule-regex #"[A-Z][a-z]*")
+
+(defn partition-formula [formula]
+  (vec (re-seq molecule-regex formula)))
+
 (defn parse-replacement [line]
   (if-let [[_ from to] (re-matches replacement-regex line)]
     {:from from
-     :to   to}))
+     :to   (partition-formula to)}))
 
 (defn indexes-of
-  ([str search] (indexes-of str search 0))
-  ([str search start] (lazy-seq
-                        (let [idx (.indexOf str search start)]
-                          (if (= -1 idx)
-                            []
-                            (cons idx (indexes-of str search (inc idx))))))))
-
+  ([seq search]
+   (indexes-of seq search 0))
+  ([seq search idx]
+   (lazy-seq
+     (loop [seq seq
+            idx idx]
+       (if (empty? seq)
+         []
+         (if (= (first seq) search)
+           (cons idx (indexes-of (rest seq) search (inc idx)))
+           (recur (rest seq) (inc idx))))))))
 
 (defn parse-input [input-string]
   (let [lines (str/split-lines input-string)
@@ -29,19 +38,19 @@
                           (remove nil?))
         formula (last lines)]
     {:replacements replacements
-     :formula      formula}))
+     :formula      (partition-formula formula)}))
 
 (def input (parse-input input-string))
 
-(defn splice-string [string idx n replacement]
-  (str (.substring string 0 idx)
-       replacement
-       (.substring string (+ idx n))))
+(defn splice [seq idx n & new]
+  (let [[a b] (split-at idx seq)
+        c (drop n b)]
+    (concat a new c)))
 
 (defn process-replacements [replacements formula]
   (for [{:keys [from to]} replacements
         index (indexes-of formula from)]
-    (splice-string formula index (.length from) to)))
+    (apply splice formula index 1 to)))
 
 (defn part1 []
   (let [{:keys [replacements formula]} input]
