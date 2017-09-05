@@ -86,3 +86,11 @@
                                   :when (= :player (simulate-fight player-stats boss-stats))]
                               evaluated-loadout)]
     (:cost (first (sort-by :cost successful-loadouts)))))
+
+(defn part2 []
+  (let [failed-loadouts (for [loadout loadouts
+                              :let [evaluated-loadout (evaluate-loadout loadout)
+                                    {:keys [player-stats]} evaluated-loadout]
+                              :when (= :boss (simulate-fight player-stats boss-stats))]
+                          evaluated-loadout)]
+    (:cost (last (sort-by :cost failed-loadouts)))))
