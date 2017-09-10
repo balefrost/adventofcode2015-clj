@@ -133,63 +133,70 @@
 (defn player-dead? [state]
   (<= (get-in state [:player-stats :hp]) 0))
 
-(defn resolve-turn [state spell]
-  (let [state1 (cast-spell state spell)
-        state2 (update-effects state1)
-        state3 (handle-boss-attack state2)
-        state4 (update-effects state3)]
-    (cond
-      (boss-dead? state1) {:winner :player
-                           :state  state1}
-
-      (boss-dead? state2) {:winner :player
-                           :state  state2}
-
-      (player-dead? state3) {:winner :boss
-                             :state  state3}
-
-      (boss-dead? state4) {:winner :player
-                           :state  state4}
-
-      :else {:winner nil
-             :state  state4})))
-
+(defn resolve-turn [state fns]
+  (if (empty? fns)
+    state
+    (let [[fn & fns] fns
+          state (fn state)]
+      (cond
+        (boss-dead? state) (assoc state :winner :player)
+        (player-dead? state) (assoc state :winner :boss)
+        :else (recur state fns)))))
 
 (defn castable-spells [state]
   (filter #((:applicable %) state) spells))
 
-(defn pump-states [state-space]
+(defn pump-states [make-turn-steps state-space]
   (let [{:keys [states min-mana]} state-space]
     (if (empty? states)
       state-space
       (let [[state & states] states
             spells (castable-spells state)
-            new-states (map #(resolve-turn state %) spells)
+            new-states (map #(resolve-turn state (make-turn-steps %)) spells)
             grouped-states (group-by :winner new-states)
-            player-win-states (map :state (grouped-states :player))
+            player-win-states (grouped-states :player)
+            no-win-states (grouped-states nil)
             mana-spent-for-wins (map #(get-in % [:player-stats :mana-spent]) player-win-states)
-            updated-min-mana (apply min min-mana mana-spent-for-wins)
-            no-win-states (map :state (grouped-states nil))]
-        {:states (sort-by
-                   #(get-in % [:boss-stats :hp])
-                   (filter
-                     #(>= min-mana (get-in % [:player-stats :mana-spent]))
-                     (concat no-win-states states)))
+            updated-min-mana (apply min min-mana mana-spent-for-wins)]
+        {:states   (sort-by
+                     #(get-in % [:boss-stats :hp])
+                     (filter
+                       #(>= min-mana (get-in % [:player-stats :mana-spent]))
+                       (concat no-win-states states)))
          :min-mana updated-min-mana}))))
 
 (def initial-state-space
-  {:states [initial-state]
+  {:states   [initial-state]
    :min-mana Integer/MAX_VALUE})
 
 
-(defn part1 []
+(defn make-part1-turn-steps [spell]
+  [#(cast-spell % spell)
+   update-effects
+   handle-boss-attack
+   update-effects])
+
+(defn solve [make-turn-steps]
   (loop [iterations 0
          state-space initial-state-space]
     (let [{:keys [states min-mana]} state-space]
-      ;(if (= 0 (mod iterations 500))
-      ;  (println "states: " (count states) ", min-mana: " min-mana))
+      (if (= 0 (mod iterations 500))
+        (println "states: " (count states) ", min-mana: " min-mana))
       (if (empty? (:states state-space))
         min-mana
-        (recur (inc iterations) (pump-states state-space))))))
+        (recur (inc iterations) (pump-states make-turn-steps state-space))))))
+
+(defn part1 []
+  (solve make-part1-turn-steps))
+
+(defn make-part2-turn-steps [spell]
+  [(update-player :hp -1)
+   #(cast-spell % spell)
+   update-effects
+   handle-boss-attack
+   update-effects])
+
+(defn part2 []
+  (solve make-part2-turn-steps))
 
 
