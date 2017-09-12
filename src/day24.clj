@@ -1,12 +1,11 @@
 (ns day24
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [advent-util :as advent]
-            [clojure.string :as str]))
+            [advent-util :as advent]))
 
 (def input-string (slurp (io/resource "day24_input.txt")))
 
-(def input (map advent-util/parse-int (str/split-lines input-string)))
+(def input (map advent-util/parse-int (string/split-lines input-string)))
 
 (defn subsets [coll]
   (apply concat
