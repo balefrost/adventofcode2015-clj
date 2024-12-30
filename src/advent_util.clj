@@ -1,4 +1,5 @@
 (ns advent-util
+  (:require [clojure.data.priority-map :refer [priority-map]])
   (:import (java.security MessageDigest)))
 
 (def ^chars -byte-lookup (char-array [\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f]))
@@ -31,7 +32,7 @@
 
 (defn parse-int [str] (Integer/parseInt str))
 
-(defn parse-long [str] (Long/parseLong str))
+;(defn parse-long [str] (Long/parseLong str))
 
 (defn -combinations-helper [coll n acc]
   (lazy-seq
@@ -67,3 +68,21 @@
           tl (partitions (dec n) (- sum hd))]
       (cons hd tl))))
 
+(defn dijkstra [init next]
+  (loop [queue (priority-map init 0)
+         results {}]
+    (if (empty? queue)
+      results
+      (let [[item cost-so-far] (peek queue)]
+        (if (contains? results item)
+          (throw (Exception. (str "Repeat of " item)))
+          (let [queue (pop queue)
+                nexts (next item)
+                queue (reduce (fn [queue [new-item inc-cost]]
+                                (if (contains? results new-item)
+                                  queue
+                                  (update queue new-item (fnil min Integer/MAX_VALUE) (+ cost-so-far inc-cost))))
+                              queue
+                              nexts)
+                results (assoc results item cost-so-far)]
+            (recur queue results)))))))
