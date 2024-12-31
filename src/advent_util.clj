@@ -31,8 +31,6 @@
 
 (defn parse-int [str] (Integer/parseInt str))
 
-(defn parse-long [str] (Long/parseLong str))
-
 (defn -combinations-helper [coll n acc]
   (lazy-seq
     (if (= n 0)
@@ -67,3 +65,25 @@
           tl (partitions (dec n) (- sum hd))]
       (cons hd tl))))
 
+(defn log-periodically [log-fn body-fn]
+  (let [t (Thread. (fn []
+                     (try
+                       (dorun
+                         (repeatedly
+                           (fn []
+                             (Thread/sleep 1000)
+                             (println (log-fn)))))
+                       (catch InterruptedException _))))]
+    (.start t)
+    (try
+      (body-fn)
+      (finally (.interrupt t)))))
+
+;(defmacro letrec [bindings forms]
+;  (let [names (map first bindings)]
+;        ;_ (println names)]
+;        ;bad-names (filter (comp not symbol?) names)
+;        ;_ (println bad-names)]
+;        ;_ (assert (empty? bad-names) "Not all names were symbols")]
+;  ;      name-lookup (into {} (map #(do [% (gensym %)])) names)]
+;    `{:names ~names}))
